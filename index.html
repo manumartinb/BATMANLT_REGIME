@@ -24,7 +24,12 @@ h1 { font-size:18px; margin:0; font-weight:600; }
 .regime.NEUTRAL { background:rgba(154,103,0,0.20); color:#d29922; }
 .regime.ADVERSO { background:rgba(207,34,46,0.20); color:#f85149; }
 .regime.INDETERMINADO { background:rgba(139,148,158,0.20); color:#8b949e; }
-#chart { max-width:1300px; margin:0 auto; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:8px; }
+.chart-wrap { max-width:1300px; margin:0 auto; }
+#chart { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:8px; }
+.range-bar { display:flex; gap:6px; padding:6px 8px 0 8px; flex-wrap:wrap; }
+.range-btn { background:#21262d; color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:4px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; }
+.range-btn:hover { background:#30363d; color:var(--text); }
+.range-btn.active { background:#1f6feb; color:#fff; border-color:#388bfd; }
 .note, .rules { max-width:1300px; margin:14px auto; color:var(--muted); font-size:13px; line-height:1.55; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px 18px; }
 .rules h2 { font-size:15px; margin:0 0 8px 0; color:var(--text); font-weight:600; }
 .rules h3 { font-size:11px; margin:14px 0 4px 0; color:var(--muted); text-transform:uppercase; letter-spacing:0.7px; font-weight:600; }
@@ -63,27 +68,39 @@ section.evidence { max-width:1300px; margin:0 auto; display:flex; flex-direction
       <div class="label">GBS_V1 <span id="ld-date">--</span></div>
       <div><span class="v" id="ld-gbs">--</span><span class="regime" id="lr-gbs">--</span></div>
       <div class="mini">decile: D<span id="ld-decile">--</span> / 10</div>
-      <div class="hint">composite headline</div>
+      <div class="hint">&uarr; mas alto = mejor (FAV &ge;80)</div>
     </div>
     <div class="latest">
       <div class="label">BQI pctE</div>
       <div><span class="v" id="ld-bqi">--</span><span class="regime" id="lr-bqi">--</span></div>
-      <div class="mini">pata 1 - calidad endogena</div>
+      <div class="mini">raw: <span id="ld-bqi-raw">--</span> (cohort BQI_V4 mean)</div>
+      <div class="hint">&uarr; mas alto = mejor (FAV &ge;80)</div>
     </div>
     <div class="latest">
       <div class="label">1 - TS_M3 pctE</div>
       <div><span class="v" id="ld-tsinv">--</span><span class="regime" id="lr-tsinv">--</span></div>
-      <div class="mini">pata 2 - stress term-struct</div>
+      <div class="mini">TS raw: <span id="ld-ts-raw">--</span> (term-struct VIX)</div>
+      <div class="hint">&uarr; mas alto = mas stress = mejor</div>
     </div>
     <div class="latest">
       <div class="label">MAX(TEN, PUT)</div>
       <div><span class="v" id="ld-maxor">--</span><span class="regime" id="lr-maxor">--</span></div>
-      <div class="mini">pata 3 - skew externo</div>
+      <div class="mini">dom: <span id="ld-maxor-dom">--</span> &middot; TEN <span id="ld-ten">--</span> / PUT <span id="ld-put">--</span></div>
+      <div class="hint">&uarr; mas alto = mas stress = mejor</div>
     </div>
   </div>
 </div>
 
-<div id="chart"></div>
+<div class="chart-wrap">
+  <div class="range-bar">
+    <button class="range-btn" data-range="20">20D</button>
+    <button class="range-btn" data-range="90">90D</button>
+    <button class="range-btn active" data-range="365">1A</button>
+    <button class="range-btn" data-range="1095">3A</button>
+    <button class="range-btn" data-range="all">Todo</button>
+  </div>
+  <div id="chart"></div>
+</div>
 
 <div class="rules">
   <h2>Como leer este dashboard</h2>
@@ -215,12 +232,17 @@ fetch('data.json').then(r => r.json()).then(data => {
   document.getElementById('ld-bqi').textContent   = fmt(L.bqi_pct, 1);
   document.getElementById('lr-bqi').textContent   = L.regime_bqi || '--';
   document.getElementById('lr-bqi').className     = 'regime ' + (L.regime_bqi || '');
+  document.getElementById('ld-bqi-raw').textContent = L.bqi_raw != null ? Number(L.bqi_raw).toFixed(3) : '--';
   document.getElementById('ld-tsinv').textContent = fmt(L.tsinv_pct, 1);
   document.getElementById('lr-tsinv').textContent = L.regime_tsinv || '--';
   document.getElementById('lr-tsinv').className   = 'regime ' + (L.regime_tsinv || '');
+  document.getElementById('ld-ts-raw').textContent = L.ts_raw != null ? Number(L.ts_raw).toFixed(4) : '--';
   document.getElementById('ld-maxor').textContent = fmt(L.maxor_pct, 1);
   document.getElementById('lr-maxor').textContent = L.regime_maxor || '--';
   document.getElementById('lr-maxor').className   = 'regime ' + (L.regime_maxor || '');
+  document.getElementById('ld-maxor-dom').textContent = L.maxor_dominant || '--';
+  document.getElementById('ld-ten').textContent = L.maxor_ten_pct != null ? Number(L.maxor_ten_pct).toFixed(0) : '--';
+  document.getElementById('ld-put').textContent = L.maxor_put_pct != null ? Number(L.maxor_put_pct).toFixed(0) : '--';
 
   // ---- Footer meta ----
   const M = data.meta || {};
@@ -251,6 +273,32 @@ fetch('data.json').then(r => r.json()).then(data => {
     ],
   };
   Plotly.newPlot('chart', traces, layout, {responsive:true, displayModeBar:false});
+
+  // ---- Range selector buttons ----
+  function applyRange(days) {
+    if (!xs.length) return;
+    let xRange;
+    if (days === 'all') {
+      xRange = [xs[0], xs[xs.length-1]];
+    } else {
+      const lastDate = new Date(xs[xs.length-1]);
+      const startDate = new Date(lastDate.getTime() - days * 86400000);
+      const startStr = startDate.toISOString().slice(0,10);
+      // Clamp to first available date
+      xRange = [startStr < xs[0] ? xs[0] : startStr, xs[xs.length-1]];
+    }
+    Plotly.relayout('chart', {'xaxis.range': xRange});
+  }
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const r = btn.dataset.range;
+      applyRange(r === 'all' ? 'all' : parseInt(r));
+    });
+  });
+  // Apply default (1A)
+  applyRange(365);
 
   // ---- KPIs ----
   document.getElementById('kpi-ndias').textContent    = M.n_days_backtest || '--';

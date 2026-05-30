@@ -33,7 +33,7 @@ SPX_PATH = r'C:/Users/Administrator/Desktop/FINAL DATA/SP_SPX_CLOSE_HISTORICAL_P
 print('[1] Loading OWN_ALLDAYS via pyarrow ...', flush=True)
 import pyarrow.csv as pacsv
 cols = ['dia','GBS_V1','GBS_V1_decile','GBS_V1_pctile_100',
-        'BQI_V4_pct_exp','TS_M3_pct_exp','TENSION_3WAY_MIN',
+        'BQI_V4','BQI_V4_pct_exp','TS_M3_real_equal','TS_M3_pct_exp','TENSION_3WAY_MIN',
         'PnL_d020_mediana','PnL_d050_mediana']
 ropts = pacsv.ReadOptions(use_threads=True, block_size=1<<25)
 copts = pacsv.ConvertOptions(include_columns=cols)
@@ -46,7 +46,9 @@ print(f'    {len(df):,} trades, {df.dia.dt.date.nunique():,} dias unicos, range 
 daily = df.groupby(df.dia.dt.date).agg(
     GBS=('GBS_V1','mean'),
     BQI_pctE=('BQI_V4_pct_exp','mean'),
+    BQI_raw=('BQI_V4','mean'),
     TS_pctE=('TS_M3_pct_exp','mean'),
+    TS_raw=('TS_M3_real_equal','mean'),
     TEN_raw=('TENSION_3WAY_MIN','mean'),
     pnl_d020=('PnL_d020_mediana','mean'),
     pnl_d050=('PnL_d050_mediana','mean'),
@@ -210,17 +212,26 @@ for _, r in daily.iterrows():
     })
 
 latest_row = daily.dropna(subset=['GBS']).iloc[-1]
+# Determine MAXOR dominant pata
+ten_v = float(latest_row['TEN_pctE']) if pd.notna(latest_row['TEN_pctE']) else 0
+put_v = float(latest_row['PUT_pctE']) if pd.notna(latest_row['PUT_pctE']) else 0
+dom_label = 'TEN' if ten_v >= put_v else 'PUT'
 latest = {
     'date':       latest_row['date'].strftime('%Y-%m-%d'),
     'gbs_pct':    round(float(latest_row['GBS'])*100, 2),
     'regime_gbs': banda(latest_row['GBS']),
+    'gbs_decile': int(min(10, max(1, int(latest_row['GBS']*10)+1))),
     'bqi_pct':    round(float(latest_row['BQI_pctE'])*100, 2),
     'regime_bqi': banda(latest_row['BQI_pctE']),
+    'bqi_raw':    round(float(latest_row['BQI_raw']), 3) if pd.notna(latest_row['BQI_raw']) else None,
     'tsinv_pct':  round((1-float(latest_row['TS_pctE']))*100, 2),
     'regime_tsinv': banda(1-latest_row['TS_pctE']),
+    'ts_raw':     round(float(latest_row['TS_raw']), 4) if pd.notna(latest_row['TS_raw']) else None,
     'maxor_pct':  round(float(latest_row['MAXOR'])*100, 2),
     'regime_maxor': banda(latest_row['MAXOR']),
-    'gbs_decile': int(min(10, max(1, int(latest_row['GBS']*10)+1))),
+    'maxor_dominant': dom_label,
+    'maxor_ten_pct': round(ten_v*100, 1),
+    'maxor_put_pct': round(put_v*100, 1),
 }
 
 # ---------- 4. DATA.JSON ----------

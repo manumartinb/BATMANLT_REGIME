@@ -61,14 +61,16 @@ def main():
         # --- Cargar componentes diarios desde OWN_ALLDAYS (cohort means) ---
         log('Loading OWN_ALLDAYS (pyarrow)...')
         import pyarrow.csv as pacsv
-        cols = ['dia','BQI_V4_pct_exp','TS_M3_pct_exp','TENSION_3WAY_MIN']
+        cols = ['dia','BQI_V4','BQI_V4_pct_exp','TS_M3_real_equal','TS_M3_pct_exp','TENSION_3WAY_MIN']
         ropts = pacsv.ReadOptions(use_threads=True, block_size=1<<25)
         copts = pacsv.ConvertOptions(include_columns=cols)
         df = pacsv.read_csv(LT_CSV, read_options=ropts, convert_options=copts).to_pandas()
         df['dia'] = pd.to_datetime(df['dia'])
         daily = df.groupby(df.dia.dt.date).agg(
             BQI_pctE=('BQI_V4_pct_exp','mean'),
+            BQI_raw=('BQI_V4','mean'),
             TS_pctE=('TS_M3_pct_exp','mean'),
+            TS_raw=('TS_M3_real_equal','mean'),
             TEN_raw=('TENSION_3WAY_MIN','mean'),
         ).reset_index().rename(columns={'dia':'date'})
         daily['date'] = pd.to_datetime(daily['date'])
@@ -116,17 +118,25 @@ def main():
             log("serie diaria vacia"); return 2
 
         last = daily.dropna(subset=['GBS']).iloc[-1]
+        ten_v = float(last['TEN_pctE']) if pd.notna(last['TEN_pctE']) else 0
+        put_v = float(last['PUT_pctE']) if pd.notna(last['PUT_pctE']) else 0
+        dom = 'TEN' if ten_v >= put_v else 'PUT'
         latest = {
             'date':         last['date'].strftime('%Y-%m-%d'),
             'gbs_pct':      round(float(last['GBS'])*100, 2),
             'regime_gbs':   banda(float(last['GBS'])),
+            'gbs_decile':   int(min(10, max(1, int(float(last['GBS'])*10)+1))),
             'bqi_pct':      round(float(last['BQI_pctE'])*100, 2),
             'regime_bqi':   banda(float(last['BQI_pctE'])),
+            'bqi_raw':      round(float(last['BQI_raw']), 3) if pd.notna(last['BQI_raw']) else None,
             'tsinv_pct':    round((1-float(last['TS_pctE']))*100, 2),
             'regime_tsinv': banda(1-float(last['TS_pctE'])),
+            'ts_raw':       round(float(last['TS_raw']), 4) if pd.notna(last['TS_raw']) else None,
             'maxor_pct':    round(float(last['MAXOR'])*100, 2),
             'regime_maxor': banda(float(last['MAXOR'])),
-            'gbs_decile':   int(min(10, max(1, int(float(last['GBS'])*10)+1))),
+            'maxor_dominant': dom,
+            'maxor_ten_pct': round(ten_v*100, 1),
+            'maxor_put_pct': round(put_v*100, 1),
         }
 
         data['series'] = series
