@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>BATMAN LT REGIME — GBS_V1 + 3 patas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+:root { --bg:#0d1117; --panel:#161b22; --text:#c9d1d9; --muted:#8b949e; --border:#30363d; }
+* { box-sizing: border-box; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); padding:16px; }
+.header { max-width:1300px; margin:0 auto 16px auto; display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; }
+h1 { font-size:18px; margin:0; font-weight:600; }
+.subtitle { color:var(--muted); font-size:13px; margin-top:2px; }
+.latest-group { display:flex; gap:8px; flex-wrap:wrap; }
+.latest { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:9px 12px; min-width:160px; }
+.latest .v { font-size:23px; font-weight:700; }
+.latest .label { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.latest .mini { font-size:11px; color:var(--muted); margin-top:3px; }
+.latest .hint { font-size:10.5px; color:#58a6ff; margin-top:3px; font-weight:600; }
+.latest.composite { border-left:3px solid #58a6ff; }
+.regime { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:600; margin-left:6px; vertical-align:middle; }
+.regime.FAVORABLE { background:rgba(26,127,55,0.20); color:#3fb950; }
+.regime.NEUTRAL { background:rgba(154,103,0,0.20); color:#d29922; }
+.regime.ADVERSO { background:rgba(207,34,46,0.20); color:#f85149; }
+.regime.INDETERMINADO { background:rgba(139,148,158,0.20); color:#8b949e; }
+#chart { max-width:1300px; margin:0 auto; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:8px; }
+.note, .rules { max-width:1300px; margin:14px auto; color:var(--muted); font-size:13px; line-height:1.55; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px 18px; }
+.rules h2 { font-size:15px; margin:0 0 8px 0; color:var(--text); font-weight:600; }
+.rules h3 { font-size:11px; margin:14px 0 4px 0; color:var(--muted); text-transform:uppercase; letter-spacing:0.7px; font-weight:600; }
+.rules ul { font-size:13px; line-height:1.65; color:#b6bec9; margin:4px 0; padding-left:22px; }
+.rules code { font-family:ui-monospace,Menlo,monospace; background:#21262d; padding:1px 5px; border-radius:3px; font-size:12px; color:var(--text); }
+.callout { background:#21262d; border-left:3px solid #58a6ff; padding:10px 14px; border-radius:4px; font-size:13px; color:var(--text); margin:10px 0; }
+.section-title { max-width:1300px; margin:30px auto 6px auto; font-size:16px; font-weight:700; color:var(--text); border-bottom:2px solid var(--border); padding-bottom:6px; }
+section.evidence { max-width:1300px; margin:0 auto; display:flex; flex-direction:column; gap:18px; }
+.ev-card { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px 20px; margin-top:14px; }
+.ev-card h2 { font-size:15px; margin:0 0 6px 0; color:var(--text); font-weight:600; }
+.ev-card .ev-tag { display:inline-block; font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.7px; margin-bottom:8px; }
+.ev-card p { font-size:13px; line-height:1.6; color:#b6bec9; margin:6px 0; }
+.ev-card img { display:block; max-width:100%; height:auto; margin:10px auto; border:1px solid var(--border); border-radius:4px; }
+.ev-table { width:100%; border-collapse:collapse; font-size:12.5px; margin:8px 0; }
+.ev-table th, .ev-table td { padding:6px 9px; border-bottom:1px solid var(--border); text-align:right; }
+.ev-table thead th { background:#21262d; color:var(--text); font-weight:600; border-bottom:1px solid #444c56; }
+.ev-table th:first-child, .ev-table td:first-child { text-align:left; }
+.ev-table .raw-row td { font-weight:600; background:rgba(255,255,255,0.025); }
+.pos { color:#3fb950; font-weight:600; }
+.neg { color:#f85149; font-weight:600; }
+.footer { max-width:1300px; margin:14px auto 0 auto; color:var(--muted); font-size:12px; text-align:center; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:8px; }
+.kpi { background:#21262d; border:1px solid var(--border); border-radius:4px; padding:9px 11px; }
+.kpi .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.kpi .vv { font-size:17px; font-weight:700; color:var(--text); margin-top:3px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>BATMAN LT REGIME &mdash; GBS_V1 (composite + 3 patas)</h1>
+    <div class="subtitle">Termometro regimen Batman LT (DTE&ge;200) &middot; APR ROBUSTO 8/9 PASS &middot; tau=0.96, LOYO 6/7</div>
+  </div>
+  <div class="latest-group">
+    <div class="latest composite">
+      <div class="label">GBS_V1 <span id="ld-date">--</span></div>
+      <div><span class="v" id="ld-gbs">--</span><span class="regime" id="lr-gbs">--</span></div>
+      <div class="mini">decile: D<span id="ld-decile">--</span> / 10</div>
+      <div class="hint">composite headline</div>
+    </div>
+    <div class="latest">
+      <div class="label">BQI pctE</div>
+      <div><span class="v" id="ld-bqi">--</span><span class="regime" id="lr-bqi">--</span></div>
+      <div class="mini">pata 1 - calidad endogena</div>
+    </div>
+    <div class="latest">
+      <div class="label">1 - TS_M3 pctE</div>
+      <div><span class="v" id="ld-tsinv">--</span><span class="regime" id="lr-tsinv">--</span></div>
+      <div class="mini">pata 2 - stress term-struct</div>
+    </div>
+    <div class="latest">
+      <div class="label">MAX(TEN, PUT)</div>
+      <div><span class="v" id="ld-maxor">--</span><span class="regime" id="lr-maxor">--</span></div>
+      <div class="mini">pata 3 - skew externo</div>
+    </div>
+  </div>
+</div>
+
+<div id="chart"></div>
+
+<div class="rules">
+  <h2>Como leer este dashboard</h2>
+  <div class="callout">
+    <strong>GBS_V1</strong> (GATE_BATMAN_SCORE_V1) es la senal headline. Composite continuo [0,100]
+    que agrega 3 dimensiones ortogonales del regimen estructural Batman LT.
+    Validado APR Layer A+B+C como ROBUSTO 8/9 PASS sobre 1.614 dias / 46.118 trades. Doc canonico:
+    <code>ESTRATEGIAS/GATE_BATMAN_SCORE_V1_Formula_(Batman).md</code>
+  </div>
+  <h3>Formula</h3>
+  <p style="font-family:ui-monospace,Menlo,monospace; color:var(--text); padding-left:18px;">
+    GBS_V1 = 0.333 &middot; BQI_pctE + 0.333 &middot; (1 &minus; TS_M3_pctE) + 0.334 &middot; MAX(TEN_pctE, PUT_pctE)
+  </p>
+  <h3>Las 3 patas (ortogonales por diseno)</h3>
+  <ul>
+    <li><strong>BQI_pctE</strong> &mdash; calidad estructural endogena del cohort Batman LT del dia. Mide
+      si los trades disponibles son de alta calidad geometrica/temporal (skew x ears, theta_k2, BFF).
+      Alto = bueno.</li>
+    <li><strong>(1 &minus; TS_M3_pctE)</strong> &mdash; stress macro vol via term structure VIX
+      (9D/30D/3M/6M). Alto = curva invertida (backwardation) = regime stress.</li>
+    <li><strong>MAX(TEN_pctE, PUT_pctE)</strong> &mdash; skew externo. OR logico entre compression del
+      smile (TEN) y put_skew 25d-vs-50d (PUT). Alto = miedo direccional/cola izquierda cara.</li>
+  </ul>
+  <h3>Bandas</h3>
+  <ul>
+    <li><strong>FAVORABLE</strong>: GBS &ge; 80 (top 20% historico)</li>
+    <li><strong>NEUTRAL</strong>: 20 &lt; GBS &lt; 80</li>
+    <li><strong>ADVERSO</strong>: GBS &le; 20 (bottom 20%)</li>
+  </ul>
+  <h3>Resultado central</h3>
+  <ul>
+    <li>D10 (top decile GBS) mean d020 = <strong class="pos">+22.7 pts</strong> (PF 24.8, WR 83%)</li>
+    <li>D1 (bottom decile GBS) mean d020 = <strong class="neg">&minus;4.5 pts</strong> (PF 0.66, WR 40%)</li>
+    <li>Spread D10&minus;D1 = <strong>+27 pts</strong>, monotonia Kendall tau = <strong>+0.96</strong></li>
+    <li>LOYO: 6/7 anos positivos (unico fallo: 2021)</li>
+  </ul>
+  <h3>Caveats honestos</h3>
+  <ul>
+    <li><strong>2021 roto</strong> (r=&minus;0.08): unico ano con r negativo. Replicado en LT y MT.</li>
+    <li><strong>VIX bajo colapsa Spearman</strong> en tercil inferior, aunque uplift cohorte sigue +4 pts.</li>
+    <li><strong>Drift OOS &minus;55%</strong>: senal mas debil en 2023&ndash;2025 vs 2019&ndash;2022 (aun dentro de tolerancia).</li>
+    <li><strong>Coincidente, no adelantado</strong>: mide regimen en curso, no anticipa shocks exogenos.</li>
+    <li><strong>NO portable directamente a Allantis</strong>: las patas TS_M3 y TENSION son Batman/SPX-especificas.</li>
+  </ul>
+</div>
+
+<div class="section-title">Evidencia estadistica (backtest frozen 2019-01-02 &rarr; 2025-08-14)</div>
+
+<section class="evidence">
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 1 &middot; KPIs headline</span>
+    <h2>Que dicen los datos sobre GBS_V1</h2>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="k">N dias backtest</div><div class="vv" id="kpi-ndias">--</div></div>
+      <div class="kpi"><div class="k">Baseline d020 mean</div><div class="vv" id="kpi-baseline">--</div></div>
+      <div class="kpi"><div class="k">Spearman r_day GBS</div><div class="vv" id="kpi-rday">--</div></div>
+      <div class="kpi"><div class="k">D10 d020 mean</div><div class="vv pos" id="kpi-d10">--</div></div>
+      <div class="kpi"><div class="k">D1 d020 mean</div><div class="vv neg" id="kpi-d1">--</div></div>
+      <div class="kpi"><div class="k">Spread D10&minus;D1</div><div class="vv" id="kpi-spread">--</div></div>
+    </div>
+  </div>
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 2 &middot; Cohort cuts</span>
+    <h2>PnL por cutoff GBS_V1</h2>
+    <p>Como se comporta la cohorte Batman LT cuando filtramos por GBS_V1 percentile cutoff. El RAW es el universo completo (1614 dias).</p>
+    <div id="tbl-cohort"></div>
+  </div>
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 3 &middot; Decile analysis</span>
+    <h2>Monotonia decile-a-decile (tau = +0.96)</h2>
+    <p>El decile 1 (peor regimen) pierde -4.5 pts/dia en mean; el decile 10 (mejor regimen) gana +22.7 pts/dia. Spread +27 pts.</p>
+    <img src="evidence/gbs_decile_bars.png" alt="GBS decile bars">
+    <div id="tbl-decile"></div>
+  </div>
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 4 &middot; Year stability</span>
+    <h2>Robustez ano-a-ano (LOYO 6/7)</h2>
+    <p>Spearman r y mean d020 por ano. 2021 roto (r=-0.08) -- mercado tranquilo post-COVID donde el regimen alto fue falsa alarma. Resto positivos.</p>
+    <img src="evidence/gbs_year_stability.png" alt="GBS year stability">
+    <div id="tbl-year"></div>
+  </div>
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 5 &middot; Senales SOLAS (las 3 patas por separado)</span>
+    <h2>Como se comporta cada pata aislada</h2>
+    <p>Comparable: misma estructura cohort cuts, pero la senal usada es cada pata individual (BQI / 1-TS / MAXOR). El composite GBS gana en monotonia y robustez vs cada pata sola.</p>
+    <p><strong>BQI_pctE (pata 1):</strong></p>
+    <div id="tbl-solo-bqi"></div>
+    <p style="margin-top:14px;"><strong>(1 &minus; TS_M3_pctE) (pata 2):</strong></p>
+    <div id="tbl-solo-tsinv"></div>
+    <p style="margin-top:14px;"><strong>MAX(TEN, PUT) (pata 3):</strong></p>
+    <div id="tbl-solo-maxor"></div>
+  </div>
+
+  <div class="ev-card">
+    <span class="ev-tag">SECCION 6 &middot; Correlaciones inter-senal</span>
+    <h2>Las 3 patas son ortogonales por diseno</h2>
+    <p>Spearman entre las 3 patas + composite. Correlaciones moderadas confirman ortogonalidad.</p>
+    <img src="evidence/gbs_inter_corr.png" alt="GBS inter-correlations">
+    <div id="tbl-corr"></div>
+  </div>
+
+</section>
+
+<div class="footer">
+  Dashboard generado por <code>update_dashboard.py</code> &middot; chart/panel refrescado diariamente por <code>daily_refresh.py</code><br>
+  Backtest frozen: <span id="meta-range">--</span> &middot; chart hasta: <span id="meta-chart">--</span> &middot;
+  Fuente: <code>[MAIN RANKEO LT]_..._OWN_ALLDAYS.csv</code><br>
+  Doc canonico: <code>GATE_BATMAN_SCORE_V1_Formula_(Batman).md</code> &middot;
+  Repo: <a href="https://github.com/manumartinb/BATMANLT_REGIME" style="color:#58a6ff;">github.com/manumartinb/BATMANLT_REGIME</a>
+</div>
+
+<script>
+const fmt = (v, dp=1) => v==null ? '--' : Number(v).toFixed(dp);
+const sign = v => v==null ? '' : (v >= 0 ? 'pos' : 'neg');
+
+fetch('data.json').then(r => r.json()).then(data => {
+  // ---- Header: latest panel ----
+  const L = data.latest || {};
+  document.getElementById('ld-date').textContent  = L.date || '--';
+  document.getElementById('ld-gbs').textContent   = fmt(L.gbs_pct, 1);
+  document.getElementById('lr-gbs').textContent   = L.regime_gbs || '--';
+  document.getElementById('lr-gbs').className     = 'regime ' + (L.regime_gbs || '');
+  document.getElementById('ld-decile').textContent= L.gbs_decile || '--';
+  document.getElementById('ld-bqi').textContent   = fmt(L.bqi_pct, 1);
+  document.getElementById('lr-bqi').textContent   = L.regime_bqi || '--';
+  document.getElementById('lr-bqi').className     = 'regime ' + (L.regime_bqi || '');
+  document.getElementById('ld-tsinv').textContent = fmt(L.tsinv_pct, 1);
+  document.getElementById('lr-tsinv').textContent = L.regime_tsinv || '--';
+  document.getElementById('lr-tsinv').className   = 'regime ' + (L.regime_tsinv || '');
+  document.getElementById('ld-maxor').textContent = fmt(L.maxor_pct, 1);
+  document.getElementById('lr-maxor').textContent = L.regime_maxor || '--';
+  document.getElementById('lr-maxor').className   = 'regime ' + (L.regime_maxor || '');
+
+  // ---- Footer meta ----
+  const M = data.meta || {};
+  document.getElementById('meta-range').textContent = `${M.date_min || '?'} &rarr; ${M.date_max || '?'}`;
+  document.getElementById('meta-chart').textContent = M.chart_date_max || '?';
+
+  // ---- Chart Plotly ----
+  const S = data.series || [];
+  const xs = S.map(d => d.t);
+  const traces = [
+    {x: xs, y: S.map(d=>d.gbs),  name:'GBS_V1 (composite)', mode:'lines', line:{color:'#58a6ff', width:2.2}},
+    {x: xs, y: S.map(d=>d.bqi),  name:'BQI_pctE',            mode:'lines', line:{color:'#3fb950', width:1.2, dash:'dot'}},
+    {x: xs, y: S.map(d=>d.tsinv),name:'1-TS_M3_pctE',        mode:'lines', line:{color:'#d29922', width:1.2, dash:'dot'}},
+    {x: xs, y: S.map(d=>d.maxor),name:'MAX(TEN,PUT)',        mode:'lines', line:{color:'#f85149', width:1.2, dash:'dot'}},
+    {x: xs, y: S.map(d=>d.spx),  name:'SPX close',            mode:'lines', yaxis:'y2',
+     line:{color:'#8b949e', width:1}, opacity:0.6},
+  ];
+  const layout = {
+    template:'plotly_dark', paper_bgcolor:'#161b22', plot_bgcolor:'#161b22',
+    margin:{l:50,r:60,t:30,b:40}, height:480,
+    xaxis:{gridcolor:'#21262d', showgrid:true, title:''},
+    yaxis:{title:'Percentile [0,100]', range:[0,100], gridcolor:'#21262d'},
+    yaxis2:{title:'SPX', overlaying:'y', side:'right', showgrid:false, gridcolor:'#21262d'},
+    legend:{orientation:'h', x:0, y:1.10, bgcolor:'rgba(0,0,0,0)'},
+    shapes:[
+      {type:'line', x0:xs[0], x1:xs[xs.length-1], y0:80, y1:80, line:{color:'#3fb950', width:1, dash:'dash'}, opacity:0.45},
+      {type:'line', x0:xs[0], x1:xs[xs.length-1], y0:20, y1:20, line:{color:'#f85149', width:1, dash:'dash'}, opacity:0.45},
+    ],
+  };
+  Plotly.newPlot('chart', traces, layout, {responsive:true, displayModeBar:false});
+
+  // ---- KPIs ----
+  document.getElementById('kpi-ndias').textContent    = M.n_days_backtest || '--';
+  document.getElementById('kpi-baseline').textContent = fmt(data.baseline?.d020_mean, 1);
+  document.getElementById('kpi-rday').textContent     = fmt(data.stats?.r_day_GBS_vs_d020, 3);
+  document.getElementById('kpi-d10').textContent      = fmt(data.tbl_decile_GBS?.[9]?.d020_mean, 1);
+  document.getElementById('kpi-d1').textContent       = fmt(data.tbl_decile_GBS?.[0]?.d020_mean, 1);
+  document.getElementById('kpi-spread').textContent   = fmt((data.tbl_decile_GBS?.[9]?.d020_mean||0)-(data.tbl_decile_GBS?.[0]?.d020_mean||0), 1);
+
+  // ---- Cohort cuts table ----
+  function tblCohort(rows, container) {
+    const h = `<table class="ev-table"><thead><tr>
+      <th>Corte</th><th>N dias</th><th>d020 mean</th><th>d020 med</th><th>WR</th><th>PF</th><th>CVaR5</th><th>d050 mean</th>
+    </tr></thead><tbody>` +
+    rows.map((r,i) => `<tr class="${i===0?'raw-row':''}">
+      <td>${r.label}</td>
+      <td>${r.n_dias}</td>
+      <td class="${sign(r.d020_mean)}">${fmt(r.d020_mean,2)}</td>
+      <td>${fmt(r.d020_median,2)}</td>
+      <td>${fmt(r.d020_wr,1)}%</td>
+      <td>${fmt(r.d020_pf,2)}</td>
+      <td class="${sign(r.d020_cvar5)}">${fmt(r.d020_cvar5,1)}</td>
+      <td class="${sign(r.d050_mean)}">${fmt(r.d050_mean,1)}</td>
+    </tr>`).join('') + `</tbody></table>`;
+    document.getElementById(container).innerHTML = h;
+  }
+  tblCohort(data.tbl_cohort_cuts || [], 'tbl-cohort');
+  tblCohort(data.tbl_solo_BQI || [], 'tbl-solo-bqi');
+  tblCohort(data.tbl_solo_TSinv || [], 'tbl-solo-tsinv');
+  tblCohort(data.tbl_solo_MAXOR || [], 'tbl-solo-maxor');
+
+  // ---- Decile table ----
+  const decRows = (data.tbl_decile_GBS || []).map(r => `<tr>
+    <td>D${r.decile}</td><td>${r.n}</td>
+    <td class="${sign(r.d020_mean)}">${fmt(r.d020_mean,2)}</td>
+    <td>${fmt(r.d020_median,2)}</td>
+    <td>${fmt(r.d020_wr,1)}%</td>
+    <td>${fmt(r.d020_pf,2)}</td>
+  </tr>`).join('');
+  document.getElementById('tbl-decile').innerHTML =
+    `<table class="ev-table"><thead><tr><th>Decile</th><th>N</th><th>d020 mean</th><th>median</th><th>WR</th><th>PF</th></tr></thead><tbody>${decRows}</tbody></table>`;
+
+  // ---- Year stability table ----
+  const yrRows = (data.tbl_year_stability || []).map(r => `<tr>
+    <td>${r.year}</td><td>${r.n_dias}</td>
+    <td class="${sign(r.spearman_r)}">${fmt(r.spearman_r,3)}</td>
+    <td class="${sign(r.d020_mean)}">${fmt(r.d020_mean,1)}</td>
+    <td>${fmt(r.d020_pf,2)}</td>
+    <td>${r.spearman_pos ? 'OK' : 'X'}</td>
+  </tr>`).join('');
+  document.getElementById('tbl-year').innerHTML =
+    `<table class="ev-table"><thead><tr><th>Year</th><th>N dias</th><th>Spearman r</th><th>d020 mean</th><th>PF</th><th>Pos?</th></tr></thead><tbody>${yrRows}</tbody></table>`;
+
+  // ---- Inter-correlation table ----
+  const c = data.stats?.inter_corr || {};
+  document.getElementById('tbl-corr').innerHTML = `
+    <table class="ev-table" style="max-width:520px;">
+      <thead><tr><th>Pair</th><th>Spearman r</th></tr></thead><tbody>
+        <tr><td>GBS &harr; BQI</td><td>${fmt(c.GBS_BQI,3)}</td></tr>
+        <tr><td>GBS &harr; (1-TS)</td><td>${fmt(c.GBS_TSinv,3)}</td></tr>
+        <tr><td>GBS &harr; MAXOR</td><td>${fmt(c.GBS_MAXOR,3)}</td></tr>
+        <tr><td>BQI &harr; (1-TS)</td><td>${fmt(c.BQI_TSinv,3)}</td></tr>
+        <tr><td>BQI &harr; MAXOR</td><td>${fmt(c.BQI_MAXOR,3)}</td></tr>
+        <tr><td>(1-TS) &harr; MAXOR</td><td>${fmt(c.TSinv_MAXOR,3)}</td></tr>
+      </tbody></table>`;
+});
+</script>
+</body>
+</html>
